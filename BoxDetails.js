@@ -11,12 +11,17 @@ import Animated, {
 import { PanGestureHandler } from "react-native-gesture-handler";
 import * as ImageManipulator from "expo-image-manipulator";
 import ViewShot from "react-native-view-shot";
+import DetailsView from "./DetailsView";
 
 const { width, height } = Dimensions.get("screen");
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
-export default function BoxDetails({ show, setShow, stripCount = 20 }) {
+const AUTOMATIC_DURATION = 100;
+const STRIP_COUNT = 50;
+const MANUAL_DURATION = 40;
+
+export default function BoxDetails({ show, setShow, stripCount = STRIP_COUNT }) {
    const prevShownRef = useRef(false);
    const contentRef = useRef(null);
    const [captured, setCaptured] = useState([]);
@@ -32,10 +37,16 @@ export default function BoxDetails({ show, setShow, stripCount = 20 }) {
          if (show) {
             opacityIndex.value = stripCount - 1;
             animatedIndex.value = 0;
-            translateX[0].value = withTiming(0, { duration: 300 });
+            translateX[0].value = withTiming(0, { duration: AUTOMATIC_DURATION });
          }
       }
    }, [show]);
+
+   useEffect(() => {
+      setTimeout(() => {
+         onPageLoaded();
+      }, 200);
+   }, []);
 
    const onGestureEvent = useAnimatedGestureHandler({
       onStart: ({ absoluteY }, ctx) => {
@@ -75,19 +86,19 @@ export default function BoxDetails({ show, setShow, stripCount = 20 }) {
       for (let i = animatedIndex.value + 1; i < stripCount; i++) {
          const nextIndex = animatedIndex.value + outCount++;
          translateX[i].value = withTiming(translateX[nextIndex].value, {
-            duration: 40,
+            duration: MANUAL_DURATION,
          });
       }
 
       for (let i = animatedIndex.value - 1; i >= 0; i--) {
          const nextIndex = animatedIndex.value + inCount--;
          translateX[i].value = withTiming(translateX[nextIndex].value, {
-            duration: 40,
+            duration: MANUAL_DURATION,
          });
       }
    });
 
-   const translateAnimations = translateX.map((_, i) => {
+   const boxAnimations = translateX.map((_, i) => {
       return useAnimatedStyle(() => {
          return {
             transform: [{ translateX: translateX[i].value }],
@@ -101,7 +112,7 @@ export default function BoxDetails({ show, setShow, stripCount = 20 }) {
       };
    });
 
-   const onImageLoadEnd = async () => {
+   const onPageLoaded = async () => {
       const uri = await contentRef.current.capture({
          format: "jpg",
          quality: 0.8,
@@ -136,30 +147,43 @@ export default function BoxDetails({ show, setShow, stripCount = 20 }) {
          pointerEvents={show ? "auto" : "none"}
          style={StyleSheet.absoluteFill}
       >
-         <Animated.View style={[StyleSheet.absoluteFill, contentOpacityAnim]}>
-            <ViewShot ref={contentRef} style={styles.root}>
-               <Image
-                  style={StyleSheet.absoluteFill}
-                  onLoadEnd={() => onImageLoadEnd()}
-                  source={{ uri: "https://loremflickr.com/400/800" }}
-               />
-            </ViewShot>
-         </Animated.View>
-
          <PanGestureHandler {...{ onGestureEvent }}>
-            <Animated.View style={styles.fakeContent(stripCount)}>
-               {captured.map((uri, i) => {
-                  return (
-                     <AnimatedImage
-                        key={uri}
-                        source={{ uri }}
-                        style={[
-                           styles.fakeContent(stripCount),
-                           translateAnimations[i],
-                        ]}
+            <Animated.View style={styles.root}>
+               <Animated.View style={styles.fakeContent(stripCount)}>
+                  {captured.map((uri, i) => {
+                     return (
+                        <AnimatedImage
+                           key={uri}
+                           source={{ uri }}
+                           style={[
+                              styles.fakeContent(stripCount),
+                              boxAnimations[i],
+                           ]}
+                        />
+                     );
+                  })}
+               </Animated.View>
+               <Animated.View
+                  style={[StyleSheet.absoluteFill, contentOpacityAnim]}
+               >
+                  <ViewShot ref={contentRef} style={styles.root}>
+                     <DetailsView
+                        onBackPress={() => {
+                           opacityIndex.value = 0;
+                           animatedIndex.value = 0;
+                           translateX[0].value = withTiming(
+                              width,
+                              {
+                                 duration: AUTOMATIC_DURATION,
+                              },
+                              () => {
+                                 runOnJS(setShow)(false);
+                              }
+                           );
+                        }}
                      />
-                  );
-               })}
+                  </ViewShot>
+               </Animated.View>
             </Animated.View>
          </PanGestureHandler>
       </View>
