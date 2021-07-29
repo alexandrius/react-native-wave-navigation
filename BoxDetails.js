@@ -17,9 +17,9 @@ const { width, height } = Dimensions.get("screen");
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
-const AUTOMATIC_DURATION = 100;
-const STRIP_COUNT = 50;
-const MANUAL_DURATION = 40;
+const AUTOMATIC_DURATION = 80;
+const STRIP_COUNT = 30;
+const MANUAL_DURATION = 30;
 
 export default function BoxDetails({ show, setShow, stripCount = STRIP_COUNT }) {
    const prevShownRef = useRef(false);

@@ -246,8 +246,6 @@ const styles = StyleSheet.create({
    },
    imageContainer: {
       backgroundColor: "rgb(242,242,242)",
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
       paddingHorizontal: 20,
       paddingTop: 60,
       paddingBottom: 20,
